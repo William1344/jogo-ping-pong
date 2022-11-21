@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jogo Ping-Pong</title>
+  <style>
+    * {
+      overflow  : hidden;
+      margin    : 0;
+      padding   : 0;
+    }
+  </style>
+</head>
+<body>
+  <canvas></canvas>
+  <script>
+    const canvasEl  = document.querySelector('canvas'),
+    canvasCtx = canvasEl.getContext('2d');
+    const ballVel = 8;
+    
+    const field = { // campo
+      w: window.innerWidth,
+      h: window.innerHeight,
+      draw: function(){
+        // Desenha o fundo
+        canvasCtx.fillStyle = '#286047'; // green
+        canvasCtx.fillRect(0, 0, this.w, this.h);
+      }
+    }
+    const line = {  // Linha divisória
+      w: 15,
+      h: field.h,
+      draw: function(){
+        // Desenha a linha do meio
+        canvasCtx.fillStyle = '#fff'; // white
+        canvasCtx.fillRect(field.w/2 - this.w/2, 0, this.w, this.h);
+      }    
+    }
+    const leftPaddle = { // Raquete da esquerda
+      x: 10,
+      y: field.h/2 - 50,
+      w: 15,
+      h: 150,
+      _move : function(){
+        this.y = mouse.y
+      },
+      draw: function(){
+        // Desenha a raquete da esquerda
+        canvasCtx.fillStyle = '#fff'; // white
+        canvasCtx.fillRect(this.x, this.y, this.w, this.h);
+        this._move();
+      }
+    }
+    const rightPaddle = { // Raquete da direita
+      w: 15,
+      h: 50,
+      x: field.w - 25,
+      y: field.h/2 - 50,
+      speed: 5,
+      speedUp: function(){
+        this.speed+=0.5; 
+      },
+      _move: function(){
+        if(this.y + this.h/2 < ball.y + ball.r) this.y += this.speed;
+        this.y = ball.y - this.h/2;
+      },
+      draw: function(){
+        // Desenha a raquete da direita
+        canvasCtx.fillStyle = '#fff'; // white
+        canvasCtx.fillRect(this.x, this.y, this.w, this.h);
+        this._move();
+      }
+    }
+    const ball = { // bola
+      x       : field.w/2,
+      y       : field.h/2,
+      r       : 20,
+      speed   : ballVel,
+      dirX    : 1,
+      dirY    : 1,
+      _speedUp: function(){
+        this.speed++;
+      },
+      _calPos : function(){
+        // Verifica se o jogador(humano) fez ponto
+        if(this.x > field.w - this.r - rightPaddle.w - 10){
+          if(this.y - this.r > rightPaddle.y && this.y - this.r < rightPaddle.y + rightPaddle.h){
+            this.dirX *= -1;
+          } else {// Humano fez ponto
+            score.humam++;
+            this.x = field.w/2;
+            this.y = field.h/2;
+            this.dirX *= -1;
+            rightPaddle.speedUp();
+            this._speedUp();
+          }
+        }
+        // Verifica se o jogador(máquina) fez ponto
+        if(this.x < this.r + leftPaddle.w + 10){
+          if(this.y - this.r > leftPaddle.y && this.y - this.r < leftPaddle.y + leftPaddle.h){
+            this.dirX *= -1;
+          } else {
+            score.computer++;
+            this.x = field.w/2;
+            this.y = field.h/2;
+            this.dirX *= -1;
+            rightPaddle.speedUp();
+            this._speedUp();
+          }
+        }
+        // Calcula a posição da bola
+        if(this.y > field.h - this.r || this.y < this.r){
+          this.dirY *= -1;
+        }  
+      },
+      _move   : function(){
+        this.x += this.dirX * this.speed;
+        this.y += this.dirY * this.speed;
+      },
+      _pointUp : function(){
+        this.x = field.w/2;
+        this.y = field.h/2;
+      },
+      draw: function(){
+        // Desenha a bola
+        canvasCtx.fillStyle = '#fff'; // white
+        canvasCtx.beginPath();
+        canvasCtx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+        canvasCtx.fill();
+        this._calPos();
+        this._move();
+      }
+    }
+    // MouseControl
+    const mouse = {
+      x: 0,
+      y: 0,
+
+    }
+    // Gerenciamento do Placar
+    const score = {
+      humam     : 0,
+      computer  : 0,
+      draw: function(){
+        // Desenha o placar
+        canvasCtx.font          = 'bold 100px Arial';
+        canvasCtx.textAlign     = 'center';
+        canvasCtx.textBaseline  = 'top';
+        canvasCtx.fillStyle     = '#01341D'; // dark green
+        canvasCtx.fillText(this.humam, field.w/4, 80);
+        canvasCtx.fillText(this.computer, field.w/2 + field.w/4, 80);
+        canvasCtx.font          = 'bold 50px Arial';
+        canvasCtx.textAlign     = 'center';
+        canvasCtx.textBaseline  = 'middle';
+        canvasCtx.fillStyle     = '#01341D'; // dark green
+        canvasCtx.fillText("Human", field.w/4, 50);
+        canvasCtx.fillText("Computer", field.w/2 + field.w/4, 50);
+      }
+    }
+    function setup() {
+      canvasEl.height = canvasCtx.height  = window.innerHeight;
+      canvasEl.width  = canvasCtx.width   = window.innerWidth;
+    }
+    function draw() {
+      // Desenha o campo
+      field.draw();
+      // Desenhando a linha central
+      line.draw();
+      score.draw();
+      // Desenhando as raquetes
+      leftPaddle.draw();
+      rightPaddle.draw();
+      // Desenhando a bola
+      ball.draw();
+    }
+
+    window.animateFrame = (function(){
+      return (
+        window.requestAnimationFrame       ||
+        window.webkitRequestAnimationFrame ||
+        window.mozRequestAnimationFrame    ||
+        window.oRequestAnimationFrame      ||
+        window.msRequestAnimationFrame     ||
+        function(callback){
+          window.setTimeout(callback, 1000 / 60);
+        }
+      )
+    })();
+    function main(){
+      animateFrame(main);
+      draw();
+    }
+    setup();
+    main();
+    canvasEl.addEventListener('mousemove', function(e){
+      mouse.x = e.pageX;
+      mouse.y = e.pageY;
+    });
+  </script>
+</body>
+</html>
